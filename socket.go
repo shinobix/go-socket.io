@@ -43,11 +43,11 @@ type socket struct {
 	mu        sync.Mutex
 }
 
-func newSocket(conn engineio.Conn, base *baseHandler) *socket {
+func newSocket(conn engineio.Conn, base *baseHandler, s *Server) *socket {
 	ret := &socket{
 		conn: conn,
 	}
-	ret.socketHandler = newSocketHandler(ret, base)
+	ret.socketHandler = newSocketHandler(ret, base, s)
 	return ret
 }
 

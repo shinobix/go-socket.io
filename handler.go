@@ -36,9 +36,10 @@ type socketHandler struct {
 	acks   map[int]*caller
 	socket *socket
 	rooms  map[string]struct{}
+	server *Server
 }
 
-func newSocketHandler(s *socket, base *baseHandler) *socketHandler {
+func newSocketHandler(s *socket, base *baseHandler, server *Server) *socketHandler {
 	events := make(map[string]*caller)
 	for k, v := range base.events {
 		events[k] = v
@@ -51,6 +52,7 @@ func newSocketHandler(s *socket, base *baseHandler) *socketHandler {
 		acks:   make(map[int]*caller),
 		socket: s,
 		rooms:  make(map[string]struct{}),
+		server: server,
 	}
 }
 
@@ -146,7 +148,14 @@ func (h *socketHandler) onPacket(decoder *decoder, packet *packet) ([]interface{
 			message = decoder.Message()
 		}
 	}
-	c, ok := h.events[message]
+	nsp, ok := h.server.root[packet.NSP].(*namespace)
+	if !ok {
+		if decoder != nil {
+			decoder.Close()
+		}
+		return nil, nil
+	}
+	c, ok := nsp.baseHandler.events[message]
 	if !ok {
 		// If the message is not recognized by the server, the decoder.currentCloser
 		// needs to be closed otherwise the server will be stuck until the e
